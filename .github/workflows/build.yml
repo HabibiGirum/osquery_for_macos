@@ -17,7 +17,7 @@ jobs:
         xcode-select --install
         brew install ccache git git-lfs cmake python clang-format flex bison
 
-    - name: Optional: Install Python test prerequisites
+    - name: Install Python test prerequisites
       run: |
         pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
 
