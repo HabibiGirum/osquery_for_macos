@@ -1,40 +1,32 @@
 name: Build osquery for macOS
+
 on:
   push:
     branches:
-      - main
+      - main  # Change this to the branch you want to build on
+
 jobs:
   build:
-    runs-on: macos-latest
-    steps:
-      - name: Install Dependencies
-        run: |
-          brew install ccache git git-lfs cmake python clang-format flex bison
-          # Additional steps if necessary
-          
-      - name: Clone osquery Repository
-        run: |
-          git clone https://github.com/osquery/osquery
-          cd osquery
-          
-      - name: Set up CMake
-        uses: actions/setup-cmake@v1
-        with:
-          cmake-version: 3.21.0
+    runs-on: macOS-latest
 
-      - name: Configure and Build
-        run: |
-          mkdir build
-          cd build
-          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
-          cmake --build . -j $(sysctl -n hw.ncpu)
-          
-      - name: Identify osquery Version
-        run: |
-          git fetch --tags
-          export OSQUERY_VERSION=$(git describe --tags --always)
-          
-      - name: Create macOS Packages
-        run: |
-          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCPACK_GENERATOR=productbuild -DOSQUERY_PACKAGE_VERSION=${OSQUERY_VERSION} -DOSQUERY_DATA_PATH=${DESTDIR} ../osquery-packaging
-          cmake --build . --target package
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install prerequisites
+      run: |
+        xcode-select --install
+        brew install ccache git git-lfs cmake python clang-format flex bison
+
+    - name: Optional: Install Python test prerequisites
+      run: |
+        pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
+
+    - name: Download and build osquery
+      run: |
+        git clone https://github.com/osquery/osquery
+        cd osquery
+        mkdir build
+        cd build
+        cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+        cmake --build . -j $(sysctl -n hw.ncpu)
