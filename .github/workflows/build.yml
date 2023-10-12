@@ -6,31 +6,30 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-steps:
-  - name: Install Dependencies
-    run: |
-      brew install ccache git git-lfs cmake python clang-format flex bison
-      # Additional steps if necessary
-- name: Clone osquery Repository
-  run: |
-    git clone https://github.com/osquery/osquery
-    cd osquery
-- name: Configure and Build
-  run: |
-    mkdir build
-    cd build
-    cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
-    cmake --build . -j $(sysctl -n hw.ncpu)
-- name: Identify osquery Version
-  run: |
-    git fetch --tags
-    export OSQUERY_VERSION=$(git describe --tags --always)
-- name: Create macOS Packages
-  run: |
-    cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCPACK_GENERATOR=productbuild -DOSQUERY_PACKAGE_VERSION=${OSQUERY_VERSION} -DOSQUERY_DATA_PATH=${DESTDIR} ../osquery-packaging
-    cmake --build . --target package
-- name: Publish Package as Artifact
-  uses: actions/upload-artifact@v2
-  with:
-    name: osquery-packages
-    path: build/package-directory
+    steps:
+      - name: Install Dependencies
+        run: |
+          brew install ccache git git-lfs cmake python clang-format flex bison
+          # Additional steps if necessary
+          
+      - name: Clone osquery Repository
+        run: |
+          git clone https://github.com/osquery/osquery
+          cd osquery
+          
+      - name: Configure and Build
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+          cmake --build . -j $(sysctl -n hw.ncpu)
+          
+      - name: Identify osquery Version
+        run: |
+          git fetch --tags
+          export OSQUERY_VERSION=$(git describe --tags --always)
+          
+      - name: Create macOS Packages
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCPACK_GENERATOR=productbuild -DOSQUERY_PACKAGE_VERSION=${OSQUERY_VERSION} -DOSQUERY_DATA_PATH=${DESTDIR} ../osquery-packaging
+          cmake --build . --target package
