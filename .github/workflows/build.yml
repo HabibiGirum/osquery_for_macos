@@ -16,13 +16,14 @@ jobs:
         run: |
           git clone https://github.com/osquery/osquery
           cd osquery
-          
+
       - name: Configure and Build
         run: |
           mkdir build
           cd build
           cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
           cmake --build . -j $(sysctl -n hw.ncpu)
+
           
       - name: Identify osquery Version
         run: |
