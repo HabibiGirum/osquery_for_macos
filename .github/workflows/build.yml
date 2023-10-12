@@ -3,8 +3,7 @@ name: Build osquery for macOS
 on:
   push:
     branches:
-      - main  # Change this to the branch you want to build on
-
+      - main  
 jobs:
   build:
     runs-on: macOS-latest
