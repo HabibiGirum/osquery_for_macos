@@ -15,7 +15,6 @@ jobs:
 
     - name: Install prerequisites
       run: |
-        # xcode-select --install (commented out or removed)
         brew install ccache git git-lfs cmake python clang-format flex bison
 
     - name: Optional: Install Python test prerequisites
