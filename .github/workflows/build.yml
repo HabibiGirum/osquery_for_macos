@@ -29,30 +29,9 @@ jobs:
         cd build
         cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
         cmake --build . -j $(sysctl -n hw.ncpu)
-
-    - name: Generate Packaging Data
-      run: |
-        mkdir -p build/package_data
-        export DESTDIR=$(pwd)/build/package_data
-        cmake --build . --target install
-
-    - name: Identify osquery version
-      run: |
-        cd osquery
-        git fetch --tags
-        export OSQUERY_VERSION=$(git describe --tags --always)
-
-    - name: Create macOS Packages
-      run: |
-        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCPACK_GENERATOR=productbuild \
-          -DOSQUERY_PACKAGE_VERSION=${OSQUERY_VERSION} \
-          -DOSQUERY_DATA_PATH=${DESTDIR} \
-          ../osquery-packaging
-        cmake --build . --target package
-
+        
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: osquery-packages
-        path: build
+        name: Build file
+        path: .
