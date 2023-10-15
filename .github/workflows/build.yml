@@ -29,11 +29,11 @@ jobs:
         cd build
         cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
         cmake --build . -j $(sysctl -n hw.ncpu)
-    - name: package
-      run: |
         mkdir package_data
         export DESTDIR=$(pwd)/package_data  
-        cmake --build . --target install   
+        cmake --build . --target install 
+
+          
 
     # - name: Identify osquery version
     #   run: |
