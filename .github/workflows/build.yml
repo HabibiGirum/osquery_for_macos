@@ -33,26 +33,26 @@ jobs:
         export DESTDIR=$(pwd)/package_data
         cmake --build . --target install
 
-    - name: Identify osquery version
-      run: |
-        cd osquery
-        git fetch --tags
-        export OSQUERY_VERSION=$(git describe --tags --always)
+    # - name: Identify osquery version
+    #   run: |
+    #     cd osquery
+    #     git fetch --tags
+    #     export OSQUERY_VERSION=$(git describe --tags --always)
 
-    - name: prepare osquery packages
-      run: |
-        git clone https://github.com/osquery/osquery-packaging
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCPACK_GENERATOR=productbuild \
-          -DOSQUERY_PACKAGE_VERSION=${OSQUERY_VERSION} \
-          -DOSQUERY_DATA_PATH=${DESTDIR} \
-          ../osquery-packaging
-        cmake --build . --target package
+    # - name: prepare osquery packages
+    #   run: |
+    #     git clone https://github.com/osquery/osquery-packaging
+    #     mkdir build
+    #     cd build
+    #     cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    #       -DCPACK_GENERATOR=productbuild \
+    #       -DOSQUERY_PACKAGE_VERSION=${OSQUERY_VERSION} \
+    #       -DOSQUERY_DATA_PATH=${DESTDIR} \
+    #       ../osquery-packaging
+    #     cmake --build . --target package
         
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: Build file
-        path: osquery/build/package_data
+        path: ./osquery/build/package_data
