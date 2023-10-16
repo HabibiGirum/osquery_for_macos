@@ -24,6 +24,7 @@ jobs:
         run: |
           REG ADD HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
           choco install cmake --version=3.21.4 -y
+          choco install visualstudio2019-workload-vctools
           choco install git -y
           choco install python3 -y
           choco install wixtoolset -y
