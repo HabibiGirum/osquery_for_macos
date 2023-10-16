@@ -21,11 +21,6 @@ jobs:
         with:
           python-version: 3.x
 
-      - name: Install Visual Studio 2019
-        uses: actions/setup-vs@v1
-        with:
-          vs-version: 2019
-
       - name: Install prerequisites
         run: |
           REG ADD HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
