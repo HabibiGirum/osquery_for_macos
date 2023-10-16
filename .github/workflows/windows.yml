@@ -1,0 +1,66 @@
+name: Build osquery on Windows
+
+on:
+  push:
+    branches:
+      - main
+concurrency:
+        group: hosted-${{ github.event.pull_request.number || github.run_id }}
+        cancel-in-progress: true
+jobs:
+  build:
+    runs-on: windows-latest
+    
+
+
+    steps:
+      
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install Visual Studio 2019
+        uses: cloudevents/setup-vs2019@v1
+
+      - name: Install prerequisites
+        run: |
+          REG ADD HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
+          choco install cmake --version=3.21.4 -y
+          choco install git -y
+          choco install python3 -y
+          choco install wixtoolset -y
+          choco install strawberryperl -y
+          choco install 7zip -y
+        shell: cmd
+
+      - name: Configure Git
+        run: |
+          git config core.symlinks true
+        shell: cmd
+
+      - name: Install Python prerequisites
+        run: |
+          & 'C:\Program Files\Python37\python.exe' -m pip install setuptools psutil timeout_decorator thrift==0.11.0 osquery pywin32
+        shell: powershell
+
+      - name: Clone osquery repository
+        run: |
+          git clone https://github.com/osquery/osquery
+          cd osquery
+        shell: cmd
+
+      - name: Configure osquery
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Visual Studio 16 2019" -A x64 ..
+        shell: cmd
+
+      - name: Build osquery
+        run: |
+          cmake --build . --config RelWithDebInfo -j2
+        shell: cmd
