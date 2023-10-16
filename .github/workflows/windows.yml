@@ -43,20 +43,12 @@ jobs:
         shell: powershell
 
 
-      - name: Clone osquery repository
+      - name: Clone osquery repository and build
         run: |
           git clone https://github.com/osquery/osquery
           cd osquery
-        shell: cmd
-
-      - name: Configure osquery
-        run: |
           mkdir build
           cd build
           cmake -G "Visual Studio 16 2019" -A x64 ..
-        shell: cmd
-
-      - name: Build osquery
-        run: |
           cmake --build . --config RelWithDebInfo -j2
-        shell: cmd
+        shell: powershell
