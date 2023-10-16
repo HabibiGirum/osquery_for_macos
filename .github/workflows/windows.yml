@@ -1,5 +1,4 @@
 name: Build osquery on Windows
-
 on:
   push:
     branches:
