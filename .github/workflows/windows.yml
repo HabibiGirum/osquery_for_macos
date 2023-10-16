@@ -38,8 +38,10 @@ jobs:
 
       - name: Install Python prerequisites
         run: |
-          & 'C:\Program Files\Python37\python.exe' -m pip install setuptools psutil timeout_decorator thrift==0.11.0 osquery pywin32
+          python -m pip install --upgrade pip
+          python -m pip install setuptools psutil timeout_decorator thrift==0.11.0 osquery pywin32
         shell: powershell
+
 
       - name: Clone osquery repository
         run: |
