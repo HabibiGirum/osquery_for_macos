@@ -1,55 +1,48 @@
-name: Build osquery on Windows
+name: Build on Windows
+
 on:
   push:
     branches:
       - main
-concurrency:
-  group: hosted-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: true
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.x
+    - name: Set up MSVC v142
+      uses: mithun-daa/setup-msvc@v1
 
-      - name: Install prerequisites
-        run: |
-          REG ADD HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
-          choco install cmake --version=3.21.4 -y
-          choco install visualstudio2019-workload-vctools
-          choco install git -y
-          choco install python3 -y
-          choco install wixtoolset -y
-          choco install strawberryperl -y
-          choco install 7zip -y
-        shell: cmd
+    - name: Install CMake
+      uses: chrispat/setup-cmake@v2
+      with:
+        cmake-version: '3.21.4'
 
-      - name: Configure Git
-        run: |
-          git config core.symlinks true
-        shell: cmd
+    - name: Install Python 3
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
 
-      - name: Install Python prerequisites
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install setuptools psutil timeout_decorator thrift==0.11.0 osquery pywin32
-        shell: powershell
+    - name: Set up longer paths (if needed)
+      run: |
+        REG ADD HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
+      if: runner.os == 'Windows'
 
+    - name: Configure and build
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+        cmake --build . --config Release
+      working-directory: ${{ github.workspace }}
 
-      - name: Clone osquery repository and build
-        run: |
-          git clone https://github.com/osquery/osquery
-          cd osquery
-          mkdir build
-          cd build
-          cmake -G "Visual Studio 16 2019" -A x64 ..
-          cmake --build . --config RelWithDebInfo -j2
-        shell: powershell
+    - name: Test (if applicable)
+      run: |
+        # Add commands to run tests if applicable
+      working-directory: ${{ github.workspace }}
