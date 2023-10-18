@@ -16,13 +16,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up MSVC v142
-      uses: mithun-daa/setup-msvc@v1
+    - name: Set up MSVC
+      run: |
+        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
+        choco install windows-sdk-10-version-XXX -y
+        refreshenv
+      if: runner.os == 'Windows'
 
     - name: Install CMake
-      uses: chrispat/setup-cmake@v2
-      with:
-        cmake-version: '3.21.4'
+      run: |
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+        refreshenv
+      if: runner.os == 'Windows'
 
     - name: Install Python 3
       uses: actions/setup-python@v2
