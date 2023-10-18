@@ -1,4 +1,4 @@
-name: Build on Windows
+name: Build osquery on Windows
 
 on:
   push:
@@ -16,35 +16,34 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Install CMake
+    - name: Configure Git for Windows
       run: |
-        # Define the CMake version you need (>= 3.21.4)
-        $CMAKE_VERSION="3.21.4"
-
-        # Download the CMake installer
-        Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-win64-x64.msi" -OutFile "CMake.msi"
-
-        # Install CMake with the MSI installer
-        Start-Process -Wait -FilePath "msiexec" -ArgumentList "/i CMake.msi /quiet /norestart ADD_CMAKE_TO_SYSTEM_PATH=1"
-
-        # Add CMake bin directory to the PATH for all users
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
-
-        # Clean up
-        Remove-Item "CMake.msi" -Force
+        git config --global core.symlinks true
+        git config --global core.autocrlf input
       if: runner.os == 'Windows'
 
-    - name: Set up MSVC
+    - name: Install Visual Studio 2019 Build Tools
       run: |
-        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
-        choco install windows-sdk-10-version-XXX -y
+        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.14.29.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.19041 --add Microsoft.VisualStudio.Component.Clang.C2"
         refreshenv
       if: runner.os == 'Windows'
 
-    - name: Install Python 3
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+    - name: Install CMake
+      run: |
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+        refreshenv
+      if: runner.os == 'Windows'
+
+    - name: Install Python 3 64-bit
+      run: |
+        choco install python --version 3.x
+        refreshenv
+      if: runner.os == 'Windows'
+
+    - name: Set up Strawberry Perl in PATH
+      run: |
+        setx PATH "%PATH%;C:\Strawberry\perl\bin" /M
+      if: runner.os == 'Windows'
 
     - name: Set up longer paths and reboot
       run: |
@@ -58,15 +57,21 @@ jobs:
         sleep 60
       if: runner.os == 'Windows'
 
-    - name: Configure and build
+    - name: Download and build osquery source
       run: |
-        mkdir C:\build
-        cd C:\build
-        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=C:\osquery ..
-        cmake --build . --config Release
-      working-directory: C:\
+        git clone https://github.com/osquery/osquery
+        cd osquery
+
+        # Configure
+        mkdir build
+        cd build
+        cmake -G "Visual Studio 16 2019" -A x64 ..
+
+        # Build
+        cmake --build . --config RelWithDebInfo -j2
+      if: runner.os == 'Windows'
 
     - name: Test (if applicable)
       run: |
         # Add commands to run tests if applicable
-      working-directory: C:\
+      if: runner.os == 'Windows'
