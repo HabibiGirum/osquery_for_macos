@@ -1,77 +1,73 @@
-name: Build osquery on Windows
+name: Build macOS
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
-  build:
-    runs-on: windows-latest
+  build_macos:
+    
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        build_type: [Release, Debug]
+        architecture: [x86_64, arm64]
+        os: [macos-12]
 
+        exclude:
+          - build_type: Debug
+            architecture: arm64
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Configure Git for Windows
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    
+    - name: Install dependencies
       run: |
-        git config --global core.symlinks true
-        git config --global core.autocrlf input
-      if: runner.os == 'Windows'
+        # You can put your dependency installation commands here
+        # Example: pip install -r requirements.txt
+        # Example: brew install some-package
+      # Add more steps as needed for dependency installation
 
-    - name: Install Visual Studio 2019 Build Tools
+    - name: Select the build job count
+      id: build_job_count
       run: |
-        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.14.29.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.19041 --add Microsoft.VisualStudio.Component.Clang.C2"
-        refreshenv
-      if: runner.os == 'Windows'
+        echo "VALUE=$((($(sysctl -n hw.logicalcpu) + 1))" >> $GITHUB_ENV
 
-    - name: Install CMake
+    - name: Setup build directories
       run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-        refreshenv
-      if: runner.os == 'Windows'
+        rel_build_path="build"
+        rel_src_path="src"
+        rel_ccache_path="ccache"
+        rel_downloads_path="downloads"
+        rel_install_path="install"
+        rel_package_data_path="package_data"
+        rel_packaging_path="osquery-packaging"
+        rel_package_build_path="package-build"
 
-    - name: Install Python 3 64-bit
+        mkdir -p $rel_build_path $rel_ccache_path $rel_downloads_path $rel_install_path $rel_package_data_path $rel_package_build_path
+
+        echo "SOURCE=${GITHUB_WORKSPACE}/$rel_src_path" >> $GITHUB_ENV
+        echo "REL_SOURCE=$rel_src_path" >> $GITHUB_ENV
+        echo "BINARY=${GITHUB_WORKSPACE}/$rel_build_path" >> $GITHUB_ENV
+        echo "CCACHE=${GITHUB_WORKSPACE}/$rel_ccache_path" >> $GITHUB_ENV
+        echo "DOWNLOADS=${GITHUB_WORKSPACE}/$rel_downloads_path" >> $GITHUB_ENV
+        echo "INSTALL=${GITHUB_WORKSPACE}/$rel_install_path" >> $GITHUB_ENV
+        echo "PACKAGING=${GITHUB_WORKSPACE}/$rel_packaging_path" >> $GITHUB_ENV
+        echo "PACKAGE_DATA=${GITHUB_WORKSPACE}/$rel_package_data_path" >> $GITHUB_ENV
+        echo "REL_PACKAGE_BUILD=$rel_package_build_path" >> $GITHUB_ENV
+        echo "PACKAGE_BUILD=${GITHUB_WORKSPACE}/$rel_package_build_path" >> $GITHUB_ENV
+
+    - name: Build your application
       run: |
-        choco install python --version 3.x
-        refreshenv
-      if: runner.os == 'Windows'
-
-    - name: Set up Strawberry Perl in PATH
-      run: |
-        setx PATH "%PATH%;C:\Strawberry\perl\bin" /M
-      if: runner.os == 'Windows'
-
-    - name: Set up longer paths and reboot
-      run: |
-        REG ADD HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
-        shutdown /r /t 0
-      if: runner.os == 'Windows'
-
-    - name: Wait for the machine to restart
-      run: |
-        echo "Waiting for the machine to restart..."
-        sleep 60
-      if: runner.os == 'Windows'
-
-    - name: Download and build osquery source
-      run: |
-        git clone https://github.com/osquery/osquery
-        cd osquery
-
-        # Configure
-        mkdir build
-        cd build
-        cmake -G "Visual Studio 16 2019" -A x64 ..
-
-        # Build
-        cmake --build . --config RelWithDebInfo -j2
-      if: runner.os == 'Windows'
-
-    - name: Test (if applicable)
-      run: |
-        # Add commands to run tests if applicable
-      if: runner.os == 'Windows'
+        # Add your build commands here
+        # Example: make build
+        # Example: cmake --build . --config ${{ matrix.build_type }}
+      # Add more steps as needed for your build process
