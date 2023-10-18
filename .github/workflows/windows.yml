@@ -16,16 +16,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Install CMake
+      run: |
+        # Define the CMake version you need (>= 3.21.4)
+        $CMAKE_VERSION="3.21.4"
+
+        # Download the CMake installer
+        Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-win64-x64.msi" -OutFile "CMake.msi"
+
+        # Install CMake with the MSI installer
+        Start-Process -Wait -FilePath "msiexec" -ArgumentList "/i CMake.msi /quiet /norestart ADD_CMAKE_TO_SYSTEM_PATH=1"
+
+        # Add CMake bin directory to the PATH for all users
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+
+        # Clean up
+        Remove-Item "CMake.msi" -Force
+      if: runner.os == 'Windows'
+
     - name: Set up MSVC
       run: |
         choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
         choco install windows-sdk-10-version-XXX -y
-        refreshenv
-      if: runner.os == 'Windows'
-
-    - name: Install CMake
-      run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
         refreshenv
       if: runner.os == 'Windows'
 
@@ -34,20 +46,27 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Set up longer paths (if needed)
+    - name: Set up longer paths and reboot
       run: |
         REG ADD HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
+        shutdown /r /t 0
+      if: runner.os == 'Windows'
+
+    - name: Wait for the machine to restart
+      run: |
+        echo "Waiting for the machine to restart..."
+        sleep 60
       if: runner.os == 'Windows'
 
     - name: Configure and build
       run: |
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+        mkdir C:\build
+        cd C:\build
+        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=C:\osquery ..
         cmake --build . --config Release
-      working-directory: ${{ github.workspace }}
+      working-directory: C:\
 
     - name: Test (if applicable)
       run: |
         # Add commands to run tests if applicable
-      working-directory: ${{ github.workspace }}
+      working-directory: C:\
