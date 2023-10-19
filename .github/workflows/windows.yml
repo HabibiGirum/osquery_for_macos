@@ -1,73 +1,63 @@
 name: Build macOS
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Check Code Style"]
+    types:
+      - completed
 
 jobs:
   build_macos:
-    
     runs-on: ${{ matrix.os }}
     
+
     strategy:
       matrix:
-        build_type: [Release, Debug]
-        architecture: [x86_64, arm64]
-        os: [macos-12]
+        os: ["macos-12"]
+        build_type: ["Release", "Debug"]
+        architecture: ["x86_64", "arm64"]
 
         exclude:
-          - build_type: Debug
-            architecture: arm64
-    
+          - build_type: "Debug"
+            architecture: "arm64"
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Select the build job count
+        id: build_job_count
+        run: |
+          echo "VALUE=$(($(sysctl -n hw.logicalcpu) + 1))" >> $GITHUB_ENV
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
-    
-    - name: Install dependencies
-      run: |
-        # You can put your dependency installation commands here
-        # Example: pip install -r requirements.txt
-        # Example: brew install some-package
-      # Add more steps as needed for dependency installation
+      - name: Setup the build paths
+        id: build_paths
+        run: |
+          rel_build_path="workspace/build"
+          rel_src_path="workspace/src"
+          rel_ccache_path="workspace/ccache"
+          rel_downloads_path="workspace/downloads"
+          rel_install_path="workspace/install"
+          rel_package_data_path="workspace/package_data"
+          rel_packaging_path="workspace/osquery-packaging"
+          rel_package_build_path="workspace/package-build"
 
-    - name: Select the build job count
-      id: build_job_count
-      run: |
-        echo "VALUE=$((($(sysctl -n hw.logicalcpu) + 1))" >> $GITHUB_ENV
+          mkdir -p ${rel_build_path} \
+                   ${rel_ccache_path} \
+                   ${rel_downloads_path} \
+                   ${rel_install_path} \
+                   ${rel_package_data_path} \
+                   ${rel_package_build_path}
 
-    - name: Setup build directories
-      run: |
-        rel_build_path="build"
-        rel_src_path="src"
-        rel_ccache_path="ccache"
-        rel_downloads_path="downloads"
-        rel_install_path="install"
-        rel_package_data_path="package_data"
-        rel_packaging_path="osquery-packaging"
-        rel_package_build_path="package-build"
-
-        mkdir -p $rel_build_path $rel_ccache_path $rel_downloads_path $rel_install_path $rel_package_data_path $rel_package_build_path
-
-        echo "SOURCE=${GITHUB_WORKSPACE}/$rel_src_path" >> $GITHUB_ENV
-        echo "REL_SOURCE=$rel_src_path" >> $GITHUB_ENV
-        echo "BINARY=${GITHUB_WORKSPACE}/$rel_build_path" >> $GITHUB_ENV
-        echo "CCACHE=${GITHUB_WORKSPACE}/$rel_ccache_path" >> $GITHUB_ENV
-        echo "DOWNLOADS=${GITHUB_WORKSPACE}/$rel_downloads_path" >> $GITHUB_ENV
-        echo "INSTALL=${GITHUB_WORKSPACE}/$rel_install_path" >> $GITHUB_ENV
-        echo "PACKAGING=${GITHUB_WORKSPACE}/$rel_packaging_path" >> $GITHUB_ENV
-        echo "PACKAGE_DATA=${GITHUB_WORKSPACE}/$rel_package_data_path" >> $GITHUB_ENV
-        echo "REL_PACKAGE_BUILD=$rel_package_build_path" >> $GITHUB_ENV
-        echo "PACKAGE_BUILD=${GITHUB_WORKSPACE}/$rel_package_build_path" >> $GITHUB_ENV
-
-    - name: Build your application
-      run: |
-        # Add your build commands here
-        # Example: make build
-        # Example: cmake --build . --config ${{ matrix.build_type }}
-      # Add more steps as needed for your build process
+          echo "SOURCE=$(pwd)/${rel_src_path}" >> $GITHUB_ENV
+          echo "REL_SOURCE=${rel_src_path}" >> $GITHUB_ENV
+          echo "BINARY=$(pwd)/${rel_build_path}" >> $GITHUB_ENV
+          echo "CCACHE=$(pwd)/${rel_ccache_path}" >> $GITHUB_ENV
+          echo "DOWNLOADS=$(pwd)/${rel_downloads_path}" >> $GITHUB_ENV
+          echo "INSTALL=$(pwd)/${rel_install_path}" >> $GITHUB_ENV
+          echo "PACKAGING=$(pwd)/${rel_packaging_path}" >> $GITHUB_ENV
+          echo "PACKAGE_DATA=$(pwd)/${rel_package_data_path}" >> $GITHUB_ENV
+          echo "REL_PACKAGE_BUILD=${rel_package_build_path}" >> $GITHUB_ENV
+          echo "PACKAGE_BUILD=$(pwd)/${rel_package_build_path}" >> $GITHUB_ENV
+      - name: Clone the osquery repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: ${{ steps.build_paths.outputs.REL_SOURCE }}
