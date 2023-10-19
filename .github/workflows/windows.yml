@@ -124,12 +124,12 @@ jobs:
           echo $GITHUB_WORKSPACE
         
 
-      # - name: Install CMake
-      #   working-directory: ${{ github.workspace }}
-      #   shell: bash
-      #   run: |
-      #     ./osquery/tools/ci/scripts/macos/install_cmake.sh \
-      #       "${{ steps.build_paths.outputs.DOWNLOADS }}" \
-      #       "${{ steps.build_paths.outputs.INSTALL }}" \
-      #       "3.21.4"
+      - name: Install CMake
+        # working-directory: ${{ github.workspace }}
+        shell: bash
+        run: |
+          /Users/runner/work/osquery_for_macos/osquery_for_macos/osquery/tools/ci/scripts/macos/install_cmake.sh \
+            "${{ steps.build_paths.outputs.DOWNLOADS }}" \
+            "${{ steps.build_paths.outputs.INSTALL }}" \
+            "3.21.4"
 
