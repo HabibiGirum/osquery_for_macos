@@ -74,9 +74,19 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ steps.build_paths.outputs.SOURCE }}/.git/modules
+      - name: Update the cache (downloads)
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.build_paths.outputs.DOWNLOADS }}
   
           key: |
-            gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}_${{ github.sha }}
+            downloads_${{ matrix.os }}_${{ matrix.architecture }}_${{ github.sha }}
   
           restore-keys: |
-            gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}
+            downloads_${{ matrix.os }}_${{ matrix.architecture }}
+    
+            key: |
+              gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}_${{ github.sha }}
+    
+            restore-keys: |
+              gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}
