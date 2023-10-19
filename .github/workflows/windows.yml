@@ -120,16 +120,20 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           git clone https://github.com/osquery/osquery.git
-          echo ${{ github.workspace }}
+          cd osquery  # Change directory to osquery
+          echo $PWD  # This should print the current directory (osquery)
           echo $GITHUB_WORKSPACE
+          # Now you're inside the "osquery" folder for the subsequent steps
+
         
 
       - name: Install CMake
         # working-directory: ${{ github.workspace }}
         shell: bash
         run: |
-          /Users/runner/work/osquery_for_macos/osquery_for_macos/osquery/tools/ci/scripts/macos/install_cmake.sh \
-            "${{ steps.build_paths.outputs.DOWNLOADS }}" \
-            "${{ steps.build_paths.outputs.INSTALL }}" \
-            "3.21.4"
+          echo $PWD
+          # .osquery/tools/ci/scripts/macos/install_cmake.sh \
+          #   "${{ steps.build_paths.outputs.DOWNLOADS }}" \
+          #   "${{ steps.build_paths.outputs.INSTALL }}" \
+          #   "3.21.4"
 
