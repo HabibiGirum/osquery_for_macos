@@ -1,10 +1,9 @@
 name: Build macOS
 
 on:
-  workflow_run:
-    workflows: ["Check Code Style"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
 
 jobs:
   build_macos:
