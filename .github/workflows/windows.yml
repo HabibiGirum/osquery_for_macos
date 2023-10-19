@@ -1,1 +1,126 @@
+name: Build macOS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_macos:
+    runs-on: ${{ matrix.os }}
+    
+
+    strategy:
+      matrix:
+        os: ["macos-12"]
+        build_type: ["Release", "Debug"]
+        architecture: ["x86_64", "arm64"]
+
+        exclude:
+          - build_type: "Debug"
+            architecture: "arm64"
+
+    steps:
+      - name: Select the build job count
+        id: build_job_count
+        run: |
+          echo "VALUE=$(($(sysctl -n hw.logicalcpu) + 1))" >> $GITHUB_ENV
+
+      - name: Setup the build paths
+        id: build_paths
+        run: |
+          rel_build_path="workspace/build"
+          rel_src_path="workspace/src"
+          rel_ccache_path="workspace/ccache"
+          rel_downloads_path="workspace/downloads"
+          rel_install_path="workspace/install"
+          rel_package_data_path="workspace/package_data"
+          rel_packaging_path="workspace/osquery-packaging"
+          rel_package_build_path="workspace/package-build"
+
+          mkdir -p ${rel_build_path} \
+                   ${rel_ccache_path} \
+                   ${rel_downloads_path} \
+                   ${rel_install_path} \
+                   ${rel_package_data_path} \
+                   ${rel_package_build_path}
+
+          echo "SOURCE=$(pwd)/${rel_src_path}" >> $GITHUB_ENV
+          echo "REL_SOURCE=${rel_src_path}" >> $GITHUB_ENV
+          echo "BINARY=$(pwd)/${rel_build_path}" >> $GITHUB_ENV
+          echo "CCACHE=$(pwd)/${rel_ccache_path}" >> $GITHUB_ENV
+          echo "DOWNLOADS=$(pwd)/${rel_downloads_path}" >> $GITHUB_ENV
+          echo "INSTALL=$(pwd)/${rel_install_path}" >> $GITHUB_ENV
+          echo "PACKAGING=$(pwd)/${rel_packaging_path}" >> $GITHUB_ENV
+          echo "PACKAGE_DATA=$(pwd)/${rel_package_data_path}" >> $GITHUB_ENV
+          echo "REL_PACKAGE_BUILD=${rel_package_build_path}" >> $GITHUB_ENV
+          echo "PACKAGE_BUILD=$(pwd)/${rel_package_build_path}" >> $GITHUB_ENV
+      - name: Clone the osquery repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: ${{ steps.build_paths.outputs.REL_SOURCE }}
+      - name: Update the cache (ccache)
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.build_paths.outputs.CCACHE }}
+  
+          key: |
+            ccache_${{ matrix.os }}_${{ matrix.architecture }}_${{ matrix.build_type }}_${{ github.sha }}
+  
+          restore-keys: |
+            ccache_${{ matrix.os }}_${{ matrix.architecture }}_${{ matrix.build_type }}
+      - name: Update the cache (git submodules)
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.build_paths.outputs.SOURCE }}/.git/modules
+      - name: Update the cache (downloads)
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.build_paths.outputs.DOWNLOADS }}
+  
+          key: |
+            downloads_${{ matrix.os }}_${{ matrix.architecture }}_${{ github.sha }}
+  
+          restore-keys: |
+            downloads_${{ matrix.os }}_${{ matrix.architecture }}
+    
+            key: |
+              gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}_${{ github.sha }}
+    
+            restore-keys: |
+              gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}
+      - name: Update the git submodules
+        working-directory: ${{ steps.build_paths.outputs.SOURCE }}
+        run: |
+          git submodule sync --recursive
+      - name: Install build dependencies
+        run: |
+          brew install \
+            ccache \
+            flex \
+            bison \
+            coreutils \
+            gnu-sed
+      - name: Install tests dependencies
+        id: install_test_deps
+        run: |
+          python_root="/usr/local/Frameworks/Python.framework/Versions/Current"
+  
+          ${python_root}/bin/pip3 install setuptools \
+                       pexpect==3.3 \
+                       psutil \
+                       timeout_decorator \
+                       six \
+                       thrift==0.11.0 \
+                       osquery
+  
+          echo "PYTHON_ROOT=${python_root}" >> $GITHUB_OUTPUT
+      - name: Install CMake
+        shell: bash
+        run: |
+          ${{ steps.build_paths.outputs.REL_SOURCE }}/tools/ci/scripts/macos/install_cmake.sh \
+            "${{ steps.build_paths.outputs.DOWNLOADS }}" \
+            "${{ steps.build_paths.outputs.INSTALL }}" \
+            "3.21.4"
 
