@@ -90,3 +90,7 @@ jobs:
     
             restore-keys: |
               gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}
+      - name: Update the git submodules
+        working-directory: ${{ steps.build_paths.outputs.SOURCE }}
+        run: |
+          git submodule sync --recursive
