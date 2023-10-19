@@ -120,7 +120,7 @@ jobs:
         shell: bash
         run: |
           git clone https://github.com/osquery/osquery.git
-          ${{ steps.build_paths.outputs.REL_SOURCE }}/./osquery/tools/ci/scripts/macos/install_cmake.sh \
+          ${{ steps.build_paths.outputs.REL_SOURCE }}/osquery/tools/ci/scripts/macos/install_cmake.sh \
             "${{ steps.build_paths.outputs.DOWNLOADS }}" \
             "${{ steps.build_paths.outputs.INSTALL }}" \
             "3.21.4"
