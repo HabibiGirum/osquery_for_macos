@@ -131,6 +131,7 @@ jobs:
         # working-directory: ${{ github.workspace }}
         shell: bash
         run: |
+          cd osquery
           echo $PWD
           # .osquery/tools/ci/scripts/macos/install_cmake.sh \
           #   "${{ steps.build_paths.outputs.DOWNLOADS }}" \
