@@ -102,3 +102,17 @@ jobs:
             bison \
             coreutils \
             gnu-sed
+      - name: Install tests dependencies
+        id: install_test_deps
+        run: |
+          python_root="/usr/local/Frameworks/Python.framework/Versions/Current"
+  
+          ${python_root}/bin/pip3 install setuptools \
+                       pexpect==3.3 \
+                       psutil \
+                       timeout_decorator \
+                       six \
+                       thrift==0.11.0 \
+                       osquery
+  
+          echo "PYTHON_ROOT=${python_root}" >> $GITHUB_OUTPUT
