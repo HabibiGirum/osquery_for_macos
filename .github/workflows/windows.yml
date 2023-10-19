@@ -133,8 +133,8 @@ jobs:
         run: |
           cd osquery
           echo $PWD
-          # .osquery/tools/ci/scripts/macos/install_cmake.sh \
-          #   "${{ steps.build_paths.outputs.DOWNLOADS }}" \
-          #   "${{ steps.build_paths.outputs.INSTALL }}" \
-          #   "3.21.4"
+          /tools/ci/scripts/macos/install_cmake.sh \
+            "${{ steps.build_paths.outputs.DOWNLOADS }}" \
+            "${{ steps.build_paths.outputs.INSTALL }}" \
+            "3.21.4"
 
