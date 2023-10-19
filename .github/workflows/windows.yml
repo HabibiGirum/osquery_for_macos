@@ -94,3 +94,11 @@ jobs:
         working-directory: ${{ steps.build_paths.outputs.SOURCE }}
         run: |
           git submodule sync --recursive
+      - name: Install build dependencies
+        run: |
+          brew install \
+            ccache \
+            flex \
+            bison \
+            coreutils \
+            gnu-sed
