@@ -1,4 +1,4 @@
-name: Build macOS
+name: Build osquery for macOS
 
 on:
   push:
@@ -6,135 +6,73 @@ on:
       - main
 
 jobs:
-  build_macos:
-    runs-on: ${{ matrix.os }}
-    
-
-    strategy:
-      matrix:
-        os: ["macos-12"]
-        build_type: ["Release", "Debug"]
-        architecture: ["x86_64", "arm64"]
-
-        exclude:
-          - build_type: "Debug"
-            architecture: "arm64"
+  build:
+    runs-on: macOS-latest
 
     steps:
-      - name: Select the build job count
-        id: build_job_count
-        run: |
-          echo "VALUE=$(($(sysctl -n hw.logicalcpu) + 1))" >> $GITHUB_ENV
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Setup the build paths
-        id: build_paths
-        run: |
-          rel_build_path="workspace/build"
-          rel_src_path="workspace/src"
-          rel_ccache_path="workspace/ccache"
-          rel_downloads_path="workspace/downloads"
-          rel_install_path="workspace/install"
-          rel_package_data_path="workspace/package_data"
-          rel_packaging_path="workspace/osquery-packaging"
-          rel_package_build_path="workspace/package-build"
+    - name: Install prerequisites
+      run: |
+        brew install ccache git git-lfs cmake python clang-format flex bison
 
-          mkdir -p ${rel_build_path} \
-                   ${rel_ccache_path} \
-                   ${rel_downloads_path} \
-                   ${rel_install_path} \
-                   ${rel_package_data_path} \
-                   ${rel_package_build_path}
+    - name: Install Python test prerequisites
+      run: |
+        pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
 
-          echo "SOURCE=$(pwd)/${rel_src_path}" >> $GITHUB_ENV
-          echo "REL_SOURCE=${rel_src_path}" >> $GITHUB_ENV
-          echo "BINARY=$(pwd)/${rel_build_path}" >> $GITHUB_ENV
-          echo "CCACHE=$(pwd)/${rel_ccache_path}" >> $GITHUB_ENV
-          echo "DOWNLOADS=$(pwd)/${rel_downloads_path}" >> $GITHUB_ENV
-          echo "INSTALL=$(pwd)/${rel_install_path}" >> $GITHUB_ENV
-          echo "PACKAGING=$(pwd)/${rel_packaging_path}" >> $GITHUB_ENV
-          echo "PACKAGE_DATA=$(pwd)/${rel_package_data_path}" >> $GITHUB_ENV
-          echo "REL_PACKAGE_BUILD=${rel_package_build_path}" >> $GITHUB_ENV
-          echo "PACKAGE_BUILD=$(pwd)/${rel_package_build_path}" >> $GITHUB_ENV
-      - name: Clone the osquery repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          path: ${{ steps.build_paths.outputs.REL_SOURCE }}
-      - name: Update the cache (ccache)
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.build_paths.outputs.CCACHE }}
-  
-          key: |
-            ccache_${{ matrix.os }}_${{ matrix.architecture }}_${{ matrix.build_type }}_${{ github.sha }}
-  
-          restore-keys: |
-            ccache_${{ matrix.os }}_${{ matrix.architecture }}_${{ matrix.build_type }}
-      - name: Update the cache (git submodules)
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.build_paths.outputs.SOURCE }}/.git/modules
-      - name: Update the cache (downloads)
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.build_paths.outputs.DOWNLOADS }}
-  
-          key: |
-            downloads_${{ matrix.os }}_${{ matrix.architecture }}_${{ github.sha }}
-  
-          restore-keys: |
-            downloads_${{ matrix.os }}_${{ matrix.architecture }}
+    - name: Download and build osquery
+      run: |
+        git clone https://github.com/osquery/osquery
+        cd osquery
+        mkdir build
+        cd build
+        cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+        cmake --build . -j $(sysctl -n hw.ncpu)
+        mkdir package_data
+        export DESTDIR=$(pwd)/package_data
+        cmake --build . --target install
     
-            key: |
-              gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}_${{ github.sha }}
-    
-            restore-keys: |
-              gitmodules_${{ matrix.os }}_${{ matrix.architecture }}_${{env.SUBMODULE_CACHE_VERSION}}
-      - name: Update the git submodules
-        working-directory: ${{ steps.build_paths.outputs.SOURCE }}
-        run: |
-          git submodule sync --recursive
-      - name: Install build dependencies
-        run: |
-          brew install \
-            ccache \
-            flex \
-            bison \
-            coreutils \
-            gnu-sed
-      - name: Install tests dependencies
-        id: install_test_deps
-        run: |
-          python_root="/usr/local/Frameworks/Python.framework/Versions/Current"
-  
-          ${python_root}/bin/pip3 install setuptools \
-                       pexpect==3.3 \
-                       psutil \
-                       timeout_decorator \
-                       six \
-                       thrift==0.11.0 \
-                       osquery
-  
-          echo "PYTHON_ROOT=${python_root}" >> $GITHUB_OUTPUT
-      - name: Clone osquery Repository
-        working-directory: ${{ github.workspace }}
-        run: |
-          git clone https://github.com/osquery/osquery.git
-          cd osquery  # Change directory to osquery
-          echo $PWD  # This should print the current directory (osquery)
-          echo $GITHUB_WORKSPACE
-          # Now you're inside the "osquery" folder for the subsequent steps
+    - name: Create PKG
+      run: |
+        # Create the PKG creation script
+        cat << 'EOF' > create_pkg.sh
+#!/bin/bash
 
-        
+# Define the paths to your built osquery components
+# Define the paths to your built osquery components
+osqueryd: "/osquery/build/osquery/build/package_data/Program Files/osquery/osqueryd/osqueryd.exe"
+osqueryConf: "/osquery/build/osquery/build/package_data/Program Files/osquery/osqueryd/osquery.conf"
+osqueryiBinaryPath: "osquery/build/osquery/build/package_data/Program Files/osquery/osqueryd/osqueryi.exe"
 
-      - name: Install CMake
-        # working-directory: ${{ github.workspace }}
-        shell: bash
-        run: |
-          cd osquery/tools/ci/scripts/macos
-          echo $PWD
-          ${{ steps.build_paths.outputs.REL_SOURCE }}/install_cmake.sh \
-            "${{ steps.build_paths.outputs.DOWNLOADS }}" \
-            "${{ steps.build_paths.outputs.INSTALL }}" \
-            "3.21.4"
 
+# Create a directory for the package contents
+pkg_dir: "/osquery/build/osquery/build/package_data"
+mkdir -p "$pkg_dir"
+
+# Copy the osquery components to the package directory
+cp "$osqueryd" "$pkg_dir"
+cp "$osqueryConf" "$pkg_dir"
+cp "$osqueryiBinaryPath" "$pkg_dir"
+
+# Create the PKG using pkgbuild
+pkgbuild --root "$pkg_dir" --install-location / --version 1.0 --identifier com.example.osquery osquery.pkg
+
+# Create a product distribution using productbuild
+productbuild --distribution distribution.xml --package-path . osquery_installer.pkg
+
+# Clean up the temporary package_data directory
+rm -r "$pkg_dir"
+EOF
+
+        # Make the script executable
+        chmod +x create_pkg.sh
+
+        # Execute the PKG creation script
+        ./create_pkg.sh
+
+    - name: Upload PKG artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: osquery_installer.pkg
+        path: osquery_installer.pkg
