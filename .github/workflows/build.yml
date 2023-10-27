@@ -1,5 +1,4 @@
-name: Build osquery for macOS
-
+name: Build osquery for macO
 on:
   push:
     branches:
