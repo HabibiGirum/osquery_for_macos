@@ -29,7 +29,6 @@ jobs:
     - name: Install Python test prerequisites
       run: |
         pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
-
     - name: Download and build osquery
       run: |
         git clone https://github.com/osquery/osquery
