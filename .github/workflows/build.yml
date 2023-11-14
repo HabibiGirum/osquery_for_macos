@@ -40,9 +40,22 @@ jobs:
         mkdir package_data
         export DESTDIR=$(pwd)/package_data
         cmake --build . --target install
-    
+
+        
+    - name: Clone the PKG file
+      working-directory: ${{ github.workspace }}
+      run: |
+        git clone https://github.com/HabibiGirum/PKG-FOR-MACOS.git
+
+    - name: Build osqueryd Package and create Combined Package
+      working-directory: ${{ github.workspace }}/osquery/build/package_data
+      run: |
+        pkgbuild --identifier com.osqueryd.pkg --install-location /usr/local/bin --root ./ --scripts ./opt/osquery/bin/osqueryi
+        productbuild --distribution ../../PKG-FOR-MACOS/distribution.xml --package-path ./ ../../osquery.pkg
+
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: Build file
-        path: ./osquery/build/package_data
+        name: osquery.pkg
+        path: osquery.pkg
+        
