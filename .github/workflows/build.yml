@@ -1,4 +1,4 @@
-name: Build osquery for macOS
+name: Build osquery for macO
 on:
   push:
     branches:
@@ -6,11 +6,17 @@ on:
 
 jobs:
   build:
-    runs-on: macOS-12.0
+    runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         build_type: [Release, Debug]
         architecture: [x86_64, arm64]
+        os: [macos-12]
+
+        exclude:
+          - build_type: Debug
+            architecture: arm64
 
     steps:
     - name: Checkout code
@@ -23,7 +29,6 @@ jobs:
     - name: Install Python test prerequisites
       run: |
         pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
-
     - name: Download and build osquery
       run: |
         git clone https://github.com/osquery/osquery
@@ -36,6 +41,7 @@ jobs:
         export DESTDIR=$(pwd)/package_data
         cmake --build . --target install
 
+        
     - name: Clone the PKG file
       working-directory: ${{ github.workspace }}
       run: |
@@ -45,7 +51,7 @@ jobs:
       working-directory: ${{ github.workspace }}
       run: |
         pkgbuild --identifier com.osqueryd.pkg --install-location /usr/local/bin --root ./osquery/build/package_data/opt/osquery --version 1.0 --scripts ./osquery/build/package_data/opt/osquery/bin/osqueryi osquery.pkg
-
+        
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
