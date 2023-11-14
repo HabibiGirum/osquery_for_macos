@@ -50,7 +50,7 @@ jobs:
     - name: Build osqueryd Package and create Combined Package
       working-directory: ${{ github.workspace }}/osquery/build/package_data
       run: |
-        pkgbuild --identifier com.osqueryd.pkg --install-location /usr/local/bin --root ./ --scripts ./opt/osquery/bin/osqueryi
+        pkgbuild --identifier com.osqueryd.pkg --install-location /usr/local/bin --root ./opt/osquery --version 1.0 --scripts ./opt/osquery/bin/osqueryi osquery.pkg
         productbuild --distribution ../../PKG-FOR-MACOS/distribution.xml --package-path ./ ../../osquery.pkg
 
     - name: Upload artifact
