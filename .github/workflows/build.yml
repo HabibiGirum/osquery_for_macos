@@ -56,7 +56,7 @@ jobs:
       - name: Create a universal binary
         working-directory: ${{ github.workspace }}
         run: |
-          lipo -create ./osquery/build/package_data/opt/osquery/bin/osqueryi_x86_64 ./osquery/build/package_data/opt/osquery/bin/osqueryi_arm64 -output ./osquery/build/package_data/opt/osquery/bin/osqueryi_universal
+          lipo -create ./osquery/build/package_data/opt/osquery/bin/osqueryi ./osquery/build/package_data/opt/osquery/bin/osqueryi -output ./osquery/build/package_data/opt/osquery/bin/osqueryi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
