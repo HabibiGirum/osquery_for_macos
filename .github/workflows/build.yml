@@ -1,4 +1,5 @@
-name: Build osquery for macO
+name: Build osquery for macOS
+
 on:
   push:
     branches:
@@ -19,41 +20,46 @@ jobs:
             architecture: arm64
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Install prerequisites
-      run: |
-        brew install ccache git git-lfs cmake python clang-format flex bison
+      - name: Install prerequisites
+        run: |
+          brew install ccache git git-lfs cmake python clang-format flex bison
 
-    - name: Install Python test prerequisites
-      run: |
-        pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
-    - name: Download and build osquery
-      run: |
-        git clone https://github.com/osquery/osquery
-        cd osquery
-        mkdir build
-        cd build
-        cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
-        cmake --build . -j $(sysctl -n hw.ncpu)
-        mkdir package_data
-        export DESTDIR=$(pwd)/package_data
-        cmake --build . --target install
+      - name: Install Python test prerequisites
+        run: |
+          pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
 
-        
-    - name: Clone the PKG file
-      working-directory: ${{ github.workspace }}
-      run: |
-        git clone https://github.com/HabibiGirum/PKG-FOR-MACOS.git
+      - name: Download and build osquery
+        run: |
+          git clone https://github.com/osquery/osquery
+          cd osquery
+          mkdir build
+          cd build
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+          cmake --build . -j $(sysctl -n hw.ncpu)
+          mkdir package_data
+          export DESTDIR=$(pwd)/package_data
+          cmake --build . --target install
 
-    - name: Build osqueryd Package and create Combined Package
-      working-directory: ${{ github.workspace }}
-      run: |
-        pkgbuild --identifier com.osqueryd.pkg --install-location /usr/local/bin --root ./osquery/build/package_data/opt/osquery --version 1.0 --scripts ./osquery/build/package_data/opt/osquery/bin/osqueryi osquery.pkg
-        
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: osquery.pkg
-        path: osquery.pkg
+      - name: Clone the PKG file
+        working-directory: ${{ github.workspace }}
+        run: |
+          git clone https://github.com/HabibiGirum/PKG-FOR-MACOS.git
+
+      - name: Build osqueryd Package and create Combined Package
+        working-directory: ${{ github.workspace }}
+        run: |
+          pkgbuild --identifier com.osqueryd.pkg --install-location /usr/local/bin --root ./osquery/build/package_data/opt/osquery --version 1.0 --scripts ./osquery/build/package_data/opt/osquery/bin/osqueryi osquery.pkg
+
+      - name: Create a universal binary
+        working-directory: ${{ github.workspace }}
+        run: |
+          lipo -create ./osquery/build/package_data/opt/osquery/bin/osqueryi_x86_64 ./osquery/build/package_data/opt/osquery/bin/osqueryi_arm64 -output ./osquery/build/package_data/opt/osquery/bin/osqueryi_universal
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: osquery.pkg
+          path: osquery.pkg
