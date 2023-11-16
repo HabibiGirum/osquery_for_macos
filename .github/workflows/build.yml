@@ -30,15 +30,16 @@ jobs:
         working-directory: ${{ github.workspace}}
         run: |
           git submodule sync --recursive
-      - name: install build dependencies
+      - name: Install build dependencies
         working-directory: ${{ github.workspace}}
+
         run: |
           brew install \
             ccache \
             flex \
             bison \
             coreutils \
-            gun-sed 
+            gnu-sed
 
       - name: install tests dependencies
         working-directory: ${{ github.workspace}}
