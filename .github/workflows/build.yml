@@ -41,21 +41,18 @@ jobs:
             coreutils \
             gnu-sed
 
-      - name: install tests dependencies
-        working-directory: ${{ github.workspace}}
-        
-        id: install_test_deps
-
+      - name: Install tests dependencies
         run: |
           python_root="/usr/local/Frameworks/Python.framework/Versions/Current"
 
-          ${python_root}/bin/pip3/ install setuptools \
-                        pexpect==3.3 \
-                        psutil \
-                        timeout_decorator \
-                        six \
-                        thrift==0.11.0 \
-                        osquery
+          ${python_root}/bin/pip3 install setuptools \
+                       pexpect==3.3 \
+                       psutil \
+                       timeout_decorator \
+                       six \
+                       thrift==0.11.0 \
+                       osquery
+                       
       - name: Install CMake
         working-directory: ${{ github.workspace}}/osquery
         shell: bash
