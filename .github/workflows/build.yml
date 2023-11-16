@@ -22,18 +22,69 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Install prerequisites
-        run: |
-          brew install ccache git git-lfs cmake python clang-format flex bison
-
-      - name: Install Python test prerequisites
-        run: |
-          pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
-
-      - name: Download and build osquery
+      - name: clone the osquery 
+        working-directory: ${{ github.workspace}}
         run: |
           git clone https://github.com/osquery/osquery
+      - name: update the git submodules
+        working-directory: ${{ github.workspace}}
+        run: |
+          git submodule sync --recursive
+      - name: install build dependencies
+        working-directory: ${{ github.workspace}}
+        run: |
+          brew install \
+            ccache \
+            flex \
+            bison \
+            coreutils \
+            gun-sed 
+
+      - name: install tests dependencies
+        working-directory: ${{ github.workspace}}
+        
+        id: install_test_deps
+
+        run: |
+          python_root="/usr/local/Frameworks/Python.framework/Versions/Current"
+
+          ${python_root}/bin/pip3/ install setuptools \
+                        pexpect==3.3 \
+                        psutil \
+                        timeout_decorator \
+                        six \
+                        thrift==0.11.0 \
+                        osquery
+      - name: Install CMake
+        working-directory: ${{ github.workspace}}/osquery
+        shell: bash
+        run: |
+          mkdir -p "workspace/downloads" \
+                   "workspace/install"
+          ./tools/ci/scripts/macos/install_cmake.sh \
+            "workspace/downloads" \
+            "workspace/install" \
+            "3.21.4"
+
+      - name: create the universal package data
+        working-directory: ${{ github.workspace}}/osquery
+        run: |
+          tools/ci/scripts/macos/build_universal_package_data.sh
+      
+        
+
+      # - name: Install prerequisites
+      #   run: |
+      #     brew install ccache git git-lfs cmake python clang-format flex bison
+
+      # - name: Install Python test prerequisites
+      #   run: |
+      #     pip3 install --user setuptools pexpect==3.3 psutil timeout_decorator six thrift==0.11.0 osquery
+
+      - name: Download and build osquery
+        working-directory: ${{ github.workspace}}
+        run: |
+          # git clone https://github.com/osquery/osquery
           cd osquery
           mkdir build
           cd build
@@ -41,7 +92,7 @@ jobs:
           cmake --build . -j $(sysctl -n hw.ncpu)
           mkdir package_data
           export DESTDIR=$(pwd)/package_data
-          cmake --build . --target install
+          cmake --build . --target package
 
       - name: Clone the PKG file
         working-directory: ${{ github.workspace }}
@@ -53,10 +104,10 @@ jobs:
         run: |
           pkgbuild --identifier com.osqueryd.pkg --install-location /usr/local/bin --root ./osquery/build/package_data/opt/osquery --version 1.0 --scripts ./osquery/build/package_data/opt/osquery/bin/osqueryi osquery.pkg
 
-      - name: Create a universal binary
-        working-directory: ${{ github.workspace }}
-        run: |
-          lipo -create ./osquery/build/package_data/opt/osquery/bin/osqueryi ./osquery/build/package_data/opt/osquery/bin/osqueryi -output ./osquery/build/package_data/opt/osquery/bin/osqueryi
+      # - name: Create a universal binary
+      #   working-directory: ${{ github.workspace }}
+      #   run: |
+      #     lipo -create ./osquery/build/package_data/opt/osquery/bin/osqueryi ./osquery/build/package_data/opt/osquery/bin/osqueryi -output ./osquery/build/package_data/opt/osquery/bin/osqueryi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
