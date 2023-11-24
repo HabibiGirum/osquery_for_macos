@@ -1,4 +1,4 @@
-name: Build osquery for macOS
+name: Build Vistar For macOS
 
 on:
   push:
