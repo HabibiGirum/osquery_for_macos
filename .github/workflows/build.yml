@@ -1,5 +1,4 @@
 name: Build Vistar For macOS
-
 on:
   push:
     branches:
