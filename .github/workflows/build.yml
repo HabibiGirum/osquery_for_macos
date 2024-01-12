@@ -100,6 +100,13 @@ jobs:
           export DESTDIR=$(pwd)/package_data
           cmake --build . --target install
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: osquerymacOS
+          path: ./osquery/build/package_data
+
+
       - name: Clone the PKG file
         working-directory: ${{ github.workspace }}
         run: |
